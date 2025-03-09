@@ -33,7 +33,7 @@ def parse_percentage(i):
     if i is None:
         return 0
     if "." in i:
-        return int(float(i) * 100)
+        return round(float(i) * 100)
     return int(i)
 
 def parse_sbox(rawSBox:bytes):
@@ -54,15 +54,14 @@ def parse_parameters(doc, version):
             "brute_chars": bool(p["brute-chars"]),
             "brute_printable": bool(p["brute-printable"]),
             "filename": p["FILE"] if p["FILE"] else "-",  # stdin by default
-            "filter_output": bool(p["filter-output"]),
+            "filter_output": parse_percentage(p["filter-output"]),
             "input_is_hex": bool(p["hex"]),
             "known_key_length": parse_int(p["key-length"]),
-            "min_key_length": parse_int(p["min-keylen"]),
             "max_key_length": parse_int(p["max-keylen"]),
+            "min_key_length": parse_int(p["min-keylen"]),
             "most_frequent_char": parse_char(p["char"]),
             "text_charset": get_charset(p["text-charset"], sbox),
             "sbox": sbox,
-            "strict_percentage": parse_percentage(p["strict"]),
             "known_plain": p["known-plaintext"].encode() if p["known-plaintext"] else False,
         }
     except ValueError as err:

@@ -7,26 +7,25 @@ xortool {__version__}
   - guess the key (base on knowledge of most frequent char)
 
 Usage:
-  xortool [-x] [-m MAX-LEN] [-f] [-t CHARSET] [-s SBOXPATH] [FILE]
-  xortool [-x] [-l LEN] [-c CHAR | -b | -o] [-f] [-t CHARSET] [-s SBOXPATH] [-p PLAIN] [FILE]
-  xortool [-x] [-m MAX-LEN| -l LEN] [-c CHAR | -b | -o] [-f] [-t CHARSET] [-s SBOXPATH] [-p PLAIN] [FILE]
+  xortool [-x] [-m MAX-LEN] [--min-keylen MIN-LEN] [-f PERCENTAGE] [-t CHARSET] [--sbox FILE] [FILE]
+  xortool [-x] [-l LEN] [-c CHAR | -b | -o] [-f PERCENTAGE] [-t CHARSET] [--sbox FILE] [-p PLAIN] [FILE]
+  xortool [-x] [-m MAX-LEN| -l LEN] [-c CHAR | -b | -o] [-f PERCENTAGE] [-t CHARSET] [--sbox FILE] [-p PLAIN] [FILE]
   xortool [-h | --help]
   xortool --version
 
 Options:
-  -x --hex                          input is hex-encoded str
-  -l LEN, --key-length=LEN          length of the key
-  --min-keylen=MIN-LEN              minimum key length to probe [default: 1]
-  -m MAX-LEN, --max-keylen=MAX-LEN  maximum key length to probe [default: 65]
-  -c CHAR, --char=CHAR              most frequent char (one char or hex code)
-  -b --brute-chars                  brute force all possible most frequent chars
-  -o --brute-printable              same as -b but will only check printable chars
-  -f --filter-output                filter outputs based on the charset
-  -t CHARSET --text-charset=CHARSET target text character set [default: printable]
-  --sbox=SBOXPATH                   path to a file containing an sbox to be applied after xoring
-  -p PLAIN --known-plaintext=PLAIN  use known plaintext for decoding
-  -s PERCENTAGE --strict=PERCENTAGE only saves files that have at least the given charset percentage
-  -h --help                         show this help
+  -x --hex                                  input is hex-encoded str
+  -l LEN --key-length=LEN                   length of the key
+  --min-keylen=MIN-LEN                      minimum key length to probe [default: 1]
+  -m MAX-LEN --max-keylen=MAX-LEN           maximum key length to probe [default: 65]
+  -c CHAR, --char=CHAR                      most frequent char (one char or hex code)
+  -b --brute-chars                          brute force all possible most frequent chars
+  -o --brute-printable                      same as -b but will only check printable chars
+  -f PERCENTAGE --filter-output=PERCENTAGE  filter outputs based on the charset [default: 0]
+  -t CHARSET --text-charset=CHARSET         target text character set [default: printable]
+  --sbox=FILE                               path to a file containing an sbox to be applied after xoring
+  -p PLAIN --known-plaintext=PLAIN          use known plaintext for decoding
+  -h --help                                 show this help
 
 Notes:
   Text character set:
@@ -370,8 +369,8 @@ def produce_plaintexts(ciphertext, keys, key_char_used, revSbox):
     key_mapping.write("file_name;key_repr\n")
     perc_mapping.write("file_name;char_used;perc_valid\n")
 
-    strict_percentage = PARAMETERS["strict_percentage"]
-    threshold_valid = strict_percentage if strict_percentage else 95
+    min_percentage:int = PARAMETERS["filter_output"]
+    threshold_valid = min_percentage if min_percentage else 95
     count_valid = 0
     
 
@@ -389,14 +388,11 @@ def produce_plaintexts(ciphertext, keys, key_char_used, revSbox):
         perc = round(100 * percentage_valid(dexored)) # Here we use the original one, since the charset is sboxed too
         if perc >= threshold_valid:
             count_valid += 1
-        elif strict_percentage: # Since threshold_valid = strict_percentage if set, no need to check again
-            continue
         key_mapping.write("{};{}\n".format(file_name, key_repr))
         perc_mapping.write("{};{};{}\n".format(file_name,
                                                repr(key_char_used[key]),
                                                perc))
-        if not PARAMETERS["filter_output"] or \
-            (PARAMETERS["filter_output"] and perc > threshold_valid):
+        if perc >= min_percentage:
             f = open(file_name, "wb")
             f.write(revDexored)
             f.close()
