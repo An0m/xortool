@@ -16,6 +16,7 @@ Usage:
 Options:
   -x --hex                          input is hex-encoded str
   -l LEN, --key-length=LEN          length of the key
+  --min-keylen=MIN-LEN              minimum key length to probe [default: 1]
   -m MAX-LEN, --max-keylen=MAX-LEN  maximum key length to probe [default: 65]
   -c CHAR, --char=CHAR              most frequent char (one char or hex code)
   -b --brute-chars                  brute force all possible most frequent chars
@@ -144,7 +145,7 @@ def get_ciphertext():
 
 def guess_key_length(text):
     """
-    Try key lengths from 1 to max_key_length and print local maximums
+    Try key lengths from min_key_lenght to max_key_length and print local maximums
 
     Set key_length to the most possible if it's not set by user.
     """
@@ -162,7 +163,7 @@ def calculate_fitnesses(text):
     prev = 0
     pprev = 0
     fitnesses = []
-    for key_length in range(1, PARAMETERS["max_key_length"] + 1):
+    for key_length in range(PARAMETERS["min_key_length"], PARAMETERS["max_key_length"] + 1):
         fitness = count_equals(text, key_length)
 
         # smaller key-length with nearly the same fitness is preferable

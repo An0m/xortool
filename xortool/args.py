@@ -50,6 +50,7 @@ def parse_parameters(doc, version):
             "filter_output": bool(p["filter-output"]),
             "input_is_hex": bool(p["hex"]),
             "known_key_length": parse_int(p["key-length"]),
+            "min_key_length": parse_int(p["min-keylen"]),
             "max_key_length": parse_int(p["max-keylen"]),
             "most_frequent_char": parse_char(p["char"]),
             "text_charset": get_charset(p["text-charset"], sbox),
