@@ -9,8 +9,6 @@ options:
     -h  -  hex-encoded string (non-letterdigit chars are stripped)
     -f  -  read data from file (- for stdin)
 
-    --newline -  newline at the end (default)
-    -n / --no-newline -  no newline at the end
     --cycle - do not pad (default)
     --sbox  -  path to a file containing an sbox to be applied before xoring
     --nc / --no-cycle -  pad smaller strings with null bytes
@@ -24,11 +22,12 @@ import sys
 
 def main():
     cycle = True
-    newline = True
+    newline = False
+    hexOutput = False
     try:
         opts, _ = getopt.getopt(
             sys.argv[1:], "xhns:r:h:f:",
-            ["cycle", "no-cycle", "nc", "no-newline", "newline", "sbox=", "hex"])
+            ["cycle", "no-cycle", "nc", "newline", "sbox=", "hex"])
         datas:list[bytes] = []
         sbox = list(range(256))
         for c, val in opts:
@@ -36,10 +35,8 @@ def main():
                 cycle = True
             elif c in ("--no-cycle", "--nc"):
                 cycle = False
-            elif c == "--newline":
+            elif c in ("-n", "--newline"):
                 newline = True
-            elif c in ("-n", "--no-newline"):
-                newline = False
             elif c == "--sbox":
                 sbox = parse_sbox(from_file(val))
             elif c in ("-x", "--hex"):
