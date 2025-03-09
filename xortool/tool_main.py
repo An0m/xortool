@@ -7,9 +7,9 @@ xortool {__version__}
   - guess the key (base on knowledge of most frequent char)
 
 Usage:
-  xortool [-x] [-m MAX-LEN] [-f] [-t CHARSET] [FILE]
-  xortool [-x] [-l LEN] [-c CHAR | -b | -o] [-f] [-t CHARSET] [-p PLAIN] [FILE]
-  xortool [-x] [-m MAX-LEN| -l LEN] [-c CHAR | -b | -o] [-f] [-t CHARSET] [-p PLAIN] [FILE]
+  xortool [-x] [-m MAX-LEN] [-f] [-t CHARSET] [-s SBOXPATH] [FILE]
+  xortool [-x] [-l LEN] [-c CHAR | -b | -o] [-f] [-t CHARSET] [-s SBOXPATH] [-p PLAIN] [FILE]
+  xortool [-x] [-m MAX-LEN| -l LEN] [-c CHAR | -b | -o] [-f] [-t CHARSET] [-s SBOXPATH] [-p PLAIN] [FILE]
   xortool [-h | --help]
   xortool --version
 
@@ -22,6 +22,7 @@ Options:
   -o --brute-printable              same as -b but will only check printable chars
   -f --filter-output                filter outputs based on the charset
   -t CHARSET --text-charset=CHARSET target text character set [default: printable]
+  --sbox=SBOXPATH                   path to a file containing an sbox to be applied after xoring
   -p PLAIN --known-plaintext=PLAIN  use known plaintext for decoding
   -h --help                         show this help
 
@@ -97,12 +98,15 @@ def main():
             die(C_WARN +
                 "Most possible char is needed to guess the key!" +
                 C_RESET)
+            
+        revSbox = [0]*len(PARAMETERS["sbox"])
+        for i,v in enumerate(PARAMETERS["sbox"]):
+            revSbox[v] = i
 
-        (probable_keys,
-         key_char_used) = guess_probable_keys_for_chars(ciphertext, try_chars)
+        probable_keys, key_char_used = guess_probable_keys_for_chars(ciphertext, try_chars, PARAMETERS["sbox"])
 
         print_keys(probable_keys)
-        produce_plaintexts(ciphertext, probable_keys, key_char_used)
+        produce_plaintexts(ciphertext, probable_keys, key_char_used, revSbox)
 
     except AnalysisError as err:
         print(C_FATAL + "[ERROR] Analysis error:\n\t", err, C_RESET)
@@ -267,7 +271,7 @@ def chars_count_at_offset(text, key_length, offset):
 # KEYS GUESSING SECTION
 # -----------------------------------------------------------------------------
 
-def guess_probable_keys_for_chars(text, try_chars):
+def guess_probable_keys_for_chars(text, try_chars, sbox):
     """
     Guess keys for list of characters.
     """
@@ -275,7 +279,7 @@ def guess_probable_keys_for_chars(text, try_chars):
     key_char_used = {}
 
     for c in try_chars:
-        keys = guess_keys(text, c)
+        keys = guess_keys(text, sbox[c])
         for key in keys:
             key_char_used[key] = c
             if key not in probable_keys:
@@ -343,7 +347,7 @@ def percentage_valid(text):
 # PRODUCE OUTPUT
 # -----------------------------------------------------------------------------
 
-def produce_plaintexts(ciphertext, keys, key_char_used):
+def produce_plaintexts(ciphertext, keys, key_char_used, revSbox):
     """
     Produce plaintext variant for each possible key,
     creates csv files with keys, percentage of valid
@@ -364,21 +368,27 @@ def produce_plaintexts(ciphertext, keys, key_char_used):
     key_mapping.write("file_name;key_repr\n")
     perc_mapping.write("file_name;char_used;perc_valid\n")
 
-    threshold_valid = 95
+    strict_percentage = PARAMETERS["strict_percentage"]
+    threshold_valid = strict_percentage if strict_percentage else 95
     count_valid = 0
+    
 
+    # Generate the files
     for index, key in enumerate(keys):
         key_index = str(index).rjust(len(str(len(keys) - 1)), "0")
         key_repr = repr(key)
         file_name = os.path.join(DIRNAME, key_index + ".out")
 
         dexored = dexor(ciphertext, key)
+        revDexored = bytes([revSbox[b] for b in dexored])
         # ignore saving file when known plain is provided and output doesn't contain it
-        if PARAMETERS["known_plain"] and PARAMETERS["known_plain"] not in dexored:
+        if PARAMETERS["known_plain"] and PARAMETERS["known_plain"] not in revDexored:
             continue
-        perc = round(100 * percentage_valid(dexored))
-        if perc > threshold_valid:
+        perc = round(100 * percentage_valid(dexored)) # Here we use the original one, since the charset is sboxed too
+        if perc >= threshold_valid:
             count_valid += 1
+        elif strict_percentage: # Since threshold_valid = strict_percentage if set, no need to check again
+            continue
         key_mapping.write("{};{}\n".format(file_name, key_repr))
         perc_mapping.write("{};{};{}\n".format(file_name,
                                                repr(key_char_used[key]),
@@ -386,7 +396,7 @@ def produce_plaintexts(ciphertext, keys, key_char_used):
         if not PARAMETERS["filter_output"] or \
             (PARAMETERS["filter_output"] and perc > threshold_valid):
             f = open(file_name, "wb")
-            f.write(dexored)
+            f.write(revDexored)
             f.close()
     key_mapping.close()
     perc_mapping.close()

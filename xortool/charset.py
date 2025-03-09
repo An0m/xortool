@@ -20,14 +20,18 @@ PREDEFINED_CHARSETS = {
 }
 
 
-def get_charset(charset):
-    charset = charset or "printable"
-    if charset in PREDEFINED_CHARSETS:
-        return PREDEFINED_CHARSETS[charset].encode("ascii")
-    try:
-        _ = b""
-        for c in set(charset):
-            _ += CHARSETS[c].encode("ascii")
-        return _
-    except KeyError:
-        raise CharsetError("Bad character set: ", charset)
+def get_charset(name, sbox):
+    name = name or "printable"
+    charset = b""
+    
+    if name in PREDEFINED_CHARSETS:
+        charset = PREDEFINED_CHARSETS[name].encode("ascii")
+        
+    else:
+        try:
+            for c in set(name):
+                charset += CHARSETS[c].encode("ascii")
+        except KeyError:
+            raise CharsetError("Bad character set: ", name)
+        
+    return bytes([sbox[b] for b in charset])
