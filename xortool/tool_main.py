@@ -25,6 +25,7 @@ Options:
   -t CHARSET --text-charset=CHARSET target text character set [default: printable]
   --sbox=SBOXPATH                   path to a file containing an sbox to be applied after xoring
   -p PLAIN --known-plaintext=PLAIN  use known plaintext for decoding
+  -s PERCENTAGE --strict=PERCENTAGE only saves files that have at least the given charset percentage
   -h --help                         show this help
 
 Notes:

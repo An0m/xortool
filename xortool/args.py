@@ -29,6 +29,13 @@ def parse_int(i):
         return None
     return int(i)
 
+def parse_percentage(i):
+    if i is None:
+        return 0
+    if "." in i:
+        return int(float(i) * 100)
+    return int(i)
+
 def parse_sbox(rawSBox:bytes):
     # First, let's parse the old sbox, so that no matter the format, we turn it into a usable list
     rawSBox = rawSBox.replace(b"[", b"").replace(b"]", b"").split(b"=")[-1]
@@ -55,6 +62,7 @@ def parse_parameters(doc, version):
             "most_frequent_char": parse_char(p["char"]),
             "text_charset": get_charset(p["text-charset"], sbox),
             "sbox": sbox,
+            "strict_percentage": parse_percentage(p["strict"]),
             "known_plain": p["known-plaintext"].encode() if p["known-plaintext"] else False,
         }
     except ValueError as err:
