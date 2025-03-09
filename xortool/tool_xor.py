@@ -12,8 +12,10 @@ options:
     --newline -  newline at the end (default)
     -n / --no-newline -  no newline at the end
     --cycle - do not pad (default)
-    --no-cycle / --nc  -  pad smaller strings with null bytes
-example: xor -s lol -h 414243 -f /etc/passwd
+    --sbox  -  path to a file containing an sbox to be applied before xoring
+    --nc / --no-cycle -  pad smaller strings with null bytes
+    -x / --hex  -  return the final output as an hex encoded string
+example: xor -s lol -h 414243 -f /etc/passwd -x
 """
 
 import getopt
@@ -25,9 +27,10 @@ def main():
     newline = True
     try:
         opts, _ = getopt.getopt(
-            sys.argv[1:], "ns:r:h:f:",
-            ["cycle", "no-cycle", "nc", "no-newline", "newline"])
-        datas = []
+            sys.argv[1:], "xhns:r:h:f:",
+            ["cycle", "no-cycle", "nc", "no-newline", "newline", "sbox=", "hex"])
+        datas:list[bytes] = []
+        sbox = list(range(256))
         for c, val in opts:
             if c == "--cycle":
                 cycle = True
@@ -37,6 +40,10 @@ def main():
                 newline = True
             elif c in ("-n", "--no-newline"):
                 newline = False
+            elif c == "--sbox":
+                sbox = parse_sbox(from_file(val))
+            elif c in ("-x", "--hex"):
+                hexOutput = True
             else:
                 datas.append(arg_data(c, val))
         if not datas:
@@ -46,15 +53,25 @@ def main():
         print(__doc__, file=sys.stderr)
         quit()
 
-    sys.stdout.buffer.write(xor(datas, cycle=cycle))
+    out = xor(datas, sbox, cycle=cycle)
+    
+    if hexOutput: print(out.hex(), end="")
+    else: sys.stdout.buffer.write(out)
     if newline:
         sys.stdout.buffer.write(b"\n")
 
+def parse_sbox(rawSBox:bytes):
+    rawSBox = rawSBox.replace(b"[", b"").replace(b"]", b"").split(b"=")[-1]
+    splitChar = b"," if b"," in rawSBox else b" "
+    sbox = [int(v) for v in rawSBox.split(splitChar) if v]
+    
+    return sbox
 
-def xor(args, cycle=True):
+
+def xor(args:list[bytes], sbox, cycle=True):
     # Sort by len DESC
     args.sort(key=len, reverse=True)
-    res = bytearray(args.pop(0))
+    res = bytearray(sbox[b] for b in args.pop(0)) # The longer one
     maxlen = len(res)
 
     for s in args:
@@ -74,7 +91,8 @@ def from_str(s):
 def from_file(s):
     if s == "-":
         s = sys.stdin.fileno()
-    return open(s, "rb").read()
+    with open(s, "rb") as f:
+        return f.read()
 
 
 def arg_data(opt, s):
