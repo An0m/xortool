@@ -7,9 +7,9 @@ xortool {__version__}
   - guess the key (base on knowledge of most frequent char)
 
 Usage:
-  xortool [-x] [-M MAX-LEN] [-m MIN-LEN] [-f PERCENTAGE] [-t CHARSET] [--sbox FILE] [FILE]
+  xortool [-x] [-m MIN-LEN] [-M MAX-LEN] [-p PLAIN] [-f PERCENTAGE] [-t CHARSET] [--sbox FILE] [FILE]
   xortool [-x] [-l LEN] [-c CHAR | -b | -o] [-f PERCENTAGE] [-t CHARSET] [--sbox FILE] [-p PLAIN] [FILE]
-  xortool [-x] [-m MAX-LEN| -l LEN] [-c CHAR | -b | -o] [-f PERCENTAGE] [-t CHARSET] [--sbox FILE] [-p PLAIN] [FILE]
+  xortool [-x] [-m MIN-LEN -M MAX-LEN | -l LEN] [-c CHAR | -b | -o] [-f PERCENTAGE] [-t CHARSET] [--sbox FILE] [-p PLAIN] [FILE]
   xortool [-h | --help]
   xortool --version
 
