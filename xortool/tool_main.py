@@ -7,7 +7,7 @@ xortool {__version__}
   - guess the key (base on knowledge of most frequent char)
 
 Usage:
-  xortool [-x] [-m MAX-LEN] [--min-keylen MIN-LEN] [-f PERCENTAGE] [-t CHARSET] [--sbox FILE] [FILE]
+  xortool [-x] [-M MAX-LEN] [-m MIN-LEN] [-f PERCENTAGE] [-t CHARSET] [--sbox FILE] [FILE]
   xortool [-x] [-l LEN] [-c CHAR | -b | -o] [-f PERCENTAGE] [-t CHARSET] [--sbox FILE] [-p PLAIN] [FILE]
   xortool [-x] [-m MAX-LEN| -l LEN] [-c CHAR | -b | -o] [-f PERCENTAGE] [-t CHARSET] [--sbox FILE] [-p PLAIN] [FILE]
   xortool [-h | --help]
@@ -16,8 +16,8 @@ Usage:
 Options:
   -x --hex                                  input is hex-encoded str
   -l LEN --key-length=LEN                   length of the key
-  --min-keylen=MIN-LEN                      minimum key length to probe [default: 1]
-  -m MAX-LEN --max-keylen=MAX-LEN           maximum key length to probe [default: 65]
+  -m MIN-LEN --min-keylen=MIN-LEN           minimum key length to probe [default: 1]
+  -M MAX-LEN --max-keylen=MAX-LEN           maximum key length to probe [default: 65]
   -c CHAR, --char=CHAR                      most frequent char (one char or hex code)
   -b --brute-chars                          brute force all possible most frequent chars
   -o --brute-printable                      same as -b but will only check printable chars
